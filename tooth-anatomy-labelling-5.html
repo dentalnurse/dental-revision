@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tooth anatomy — labelling diagram</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#1C1917;--ink-light:#78716C;--ink-faint:#A8A29E;--cream:#F8F5F0;--white:#fff;--border:#E7E2DA;--border-mid:#C8C0B4;--teal:#0B7A63;--teal-light:#E4F4EF;--green-light:#D1FAE5;--green:#059669;--rose:#9F1239;--rose-light:#FFF1F2}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--ink);font-size:15px;line-height:1.6;padding:2rem 1.5rem 4rem}
+.page{max-width:700px;margin:0 auto}
+h1{font-size:18px;font-weight:500;margin-bottom:.25rem}
+.desc{font-size:13px;color:var(--ink-light);margin-bottom:1.25rem}
+.card{background:var(--white);border:1px solid var(--border);border-radius:14px;padding:1.25rem}
+.status-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:8px}
+.badge{font-size:12px;font-weight:500;padding:4px 12px;border-radius:20px;background:var(--teal-light);color:var(--teal)}
+.badge.done{background:var(--green-light);color:var(--green)}
+.badge.wrong{background:var(--rose-light);color:var(--rose)}
+.btn{display:inline-flex;align-items:center;padding:6px 14px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;border:1px solid var(--border-mid);background:transparent;color:var(--ink)}
+.btn:hover{background:var(--border)}
+.diagram-wrap{position:relative;display:block;width:100%;max-width:520px;margin:0 auto}
+.diagram-wrap img{width:100%;display:block;border-radius:10px}
+.svg-overlay{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:5}
+.dz{position:absolute;transform:translate(-50%,-50%);cursor:pointer;z-index:10}
+.dz-slot{min-width:100px;padding:4px 10px;border-radius:20px;border:1.5px dashed var(--border-mid);background:rgba(255,255,255,0.94);font-size:11px;font-weight:500;color:var(--ink-faint);text-align:center;white-space:nowrap;transition:border-color .15s,background .15s,color .15s;box-shadow:0 1px 4px rgba(0,0,0,0.08)}
+.dz:hover .dz-slot{border-color:var(--teal);background:rgba(228,244,239,0.97);color:var(--teal)}
+.dz.filled .dz-slot{border-style:solid;border-color:var(--teal);background:rgba(228,244,239,0.97);color:var(--ink)}
+.dz.correct .dz-slot{border-color:var(--green);background:rgba(209,250,229,0.97);color:#065F46}
+.dz.wrong .dz-slot{border-color:#FCA5A5;background:rgba(255,241,242,0.97);color:var(--rose)}
+.label-bank{display:flex;flex-wrap:wrap;gap:8px;margin-top:1rem;padding:12px;background:var(--cream);border-radius:10px;min-height:48px}
+.chip{padding:6px 14px;border-radius:20px;font-size:13px;font-weight:500;cursor:pointer;background:var(--white);border:1.5px solid var(--border-mid);color:var(--ink);user-select:none;transition:border-color .15s,background .15s,opacity .15s}
+.chip:hover:not(.used){border-color:var(--teal)}
+.chip.selected{border-color:var(--teal);background:var(--teal-light)}
+.chip.used{opacity:.3;cursor:not-allowed}
+.feedback{margin-top:.75rem;min-height:22px;font-size:13px;color:var(--ink-light)}
+.attribution{font-size:11px;color:var(--ink-faint);margin-top:.75rem}
+</style>
+</head>
+<body>
+<div class="page">
+  <p style="font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink-faint);margin-bottom:6px">Revision Hub — Labelling diagrams</p>
+  <h1>Tooth anatomy</h1>
+  <p class="desc">Select a label from the bank below, then click the correct target on the diagram.</p>
+  <div class="card">
+    <div class="status-bar">
+      <span class="badge" id="badge">10 labels to place</span>
+      <div style="display:flex;gap:8px">
+        <button class="btn" onclick="checkAnswers()">Check answers</button>
+        <button class="btn" onclick="resetAll()">Reset</button>
+      </div>
+    </div>
+
+    <div class="diagram-wrap" id="wrap">
+      <img src="https://raw.githubusercontent.com/ws8m6f6bkc-maker/dental-revision/main/Image.jpeg"
+           alt="Tooth anatomy cross-section" id="img" onload="drawLines()"/>
+
+      <svg class="svg-overlay" id="svg-overlay" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
+
+      <!--
+        POSITIONS CORRECTED based on screenshot analysis.
+        Image structure (top to bottom):
+          ~0-18%y   = silver/white enamel cap (crown)
+          ~8-18%y   = enamel layer (white outer rim)
+          ~10-45%y  = tan dentine (inside enamel, crown portion)
+          ~15-42%y  = red pulp chamber (centre)
+          ~40-55%y  = pink gingiva either side
+          ~45-95%y  = root portion
+          ~47-95%y  = tan dentine (root portion)
+          ~47-95%y  = thin cementum layer over root
+          ~47-95%y  = periodontal ligament (thin space between root & bone)
+          ~47-95%y  = alveolar bone (spongy, tan, either side of root)
+          ~47-95%y  = root canal (red/blue lines down centre of root)
+          ~93-97%y  = apical foramen (very bottom of root)
+
+        Label (lx,ly) = position of label box
+        Tip (tx,ty) = where the dot sits on the structure
+
+        LEFT labels: Crown, Alveolar bone
+        RIGHT labels: everything else
+      -->
+
+      <!-- LEFT side -->
+      <!-- Crown: label top-left, tip pointing to top of enamel cap -->
+      <div class="dz" id="dz-crown"    data-answer="Crown"                    data-tx="37" data-ty="10" style="left:12%;top:8%"  onclick="handleDrop(this)"><div class="dz-slot">click to label</div></div>
+      <!-- Alveolar bone: label mid-left, tip pointing to spongy bone left side -->
+      <div class="dz" id="dz-bone"     data-answer="Alveolar bone"            data-tx="22" data-ty="72" style="left:12%;top:72%" onclick="handleDrop(this)"><div class="dz-slot">click to label</div></div>
+
+      <!-- RIGHT side — stacked evenly, tips pointing into structures -->
+      <!-- Enamel: tip to white outer rim top right of crown -->
+      <div class="dz" id="dz-enamel"   data-answer="Enamel"                   data-tx="62" data-ty="11" style="left:88%;top:11%" onclick="handleDrop(this)"><div class="dz-slot">click to label</div></div>
+      <!-- Dentine: tip to tan layer right side of crown -->
+      <div class="dz" id="dz-dentine"  data-answer="Dentine"                  data-tx="62" data-ty="24" style="left:88%;top:24%" onclick="handleDrop(this)"><div class="dz-slot">click to label</div></div>
+      <!-- Pulp: tip to centre of red pulp chamber -->
+      <div class="dz" id="dz-pulp"     data-answer="Pulp"                     data-tx="50" data-ty="30" style="left:88%;top:34%" onclick="handleDrop(this)"><div class="dz-slot">click to label</div></div>
+      <!-- Gingiva: tip to pink gum tissue right side -->
+      <div class="dz" id="dz-gingiva"  data-answer="Gingiva"                  data-tx="72" data-ty="46" style="left:88%;top:46%" onclick="handleDrop(this)"><div class="dz-slot">click to label</div></div>
+      <!-- Cementum: tip to thin layer on right side of root upper portion -->
+      <div class="dz" id="dz-cementum" data-answer="Cementum"                 data-tx="64" data-ty="58" style="left:88%;top:58%" onclick="handleDrop(this)"><div class="dz-slot">click to label</div></div>
+      <!-- PDL: tip to thin space between root and bone right side -->
+      <div class="dz" id="dz-pdl"      data-answer="Periodontal ligament"     data-tx="67" data-ty="68" style="left:88%;top:68%" onclick="handleDrop(this)"><div class="dz-slot">click to label</div></div>
+      <!-- Nerves: tip to red/blue vessels in root canal centre -->
+      <div class="dz" id="dz-nerves"   data-answer="Nerves and blood vessels" data-tx="51" data-ty="74" style="left:88%;top:79%" onclick="handleDrop(this)"><div class="dz-slot">click to label</div></div>
+      <!-- Apical foramen: tip to very bottom of root -->
+      <div class="dz" id="dz-apex"     data-answer="Apical foramen"           data-tx="50" data-ty="94" style="left:55%;top:97%" onclick="handleDrop(this)"><div class="dz-slot">click to label</div></div>
+    </div>
+
+    <div class="label-bank" id="bank">
+      <div class="chip" data-label="Enamel"                   onclick="chipClick(this)">Enamel</div>
+      <div class="chip" data-label="Dentine"                  onclick="chipClick(this)">Dentine</div>
+      <div class="chip" data-label="Pulp"                     onclick="chipClick(this)">Pulp</div>
+      <div class="chip" data-label="Gingiva"                  onclick="chipClick(this)">Gingiva</div>
+      <div class="chip" data-label="Cementum"                 onclick="chipClick(this)">Cementum</div>
+      <div class="chip" data-label="Periodontal ligament"     onclick="chipClick(this)">Periodontal ligament</div>
+      <div class="chip" data-label="Nerves and blood vessels" onclick="chipClick(this)">Nerves and blood vessels</div>
+      <div class="chip" data-label="Apical foramen"           onclick="chipClick(this)">Apical foramen</div>
+      <div class="chip" data-label="Crown"                    onclick="chipClick(this)">Crown</div>
+      <div class="chip" data-label="Alveolar bone"            onclick="chipClick(this)">Alveolar bone</div>
+    </div>
+
+    <div class="feedback" id="feedback"></div>
+    <p class="attribution">Diagram generated using Google Gemini.</p>
+  </div>
+</div>
+
+<script>
+const DROPS=['dz-crown','dz-bone','dz-enamel','dz-dentine','dz-pulp','dz-gingiva','dz-cementum','dz-pdl','dz-nerves','dz-apex'];
+const TOTAL=DROPS.length;
+let placed={};
+let selected=null;
+
+function drawLines(){
+  const svg=document.getElementById('svg-overlay');
+  svg.innerHTML='';
+  const ns='http://www.w3.org/2000/svg';
+  DROPS.forEach(id=>{
+    const dz=document.getElementById(id);
+    if(!dz) return;
+    const lx=parseFloat(dz.style.left);
+    const ly=parseFloat(dz.style.top);
+    const tx=parseFloat(dz.dataset.tx);
+    const ty=parseFloat(dz.dataset.ty);
+    const line=document.createElementNS(ns,'line');
+    line.setAttribute('x1',lx); line.setAttribute('y1',ly);
+    line.setAttribute('x2',tx); line.setAttribute('y2',ty);
+    line.setAttribute('stroke','rgba(28,25,23,0.5)');
+    line.setAttribute('stroke-width','0.5');
+    line.setAttribute('stroke-dasharray','1.5 1');
+    svg.appendChild(line);
+    const dot=document.createElementNS(ns,'circle');
+    dot.setAttribute('cx',tx); dot.setAttribute('cy',ty);
+    dot.setAttribute('r','0.9'); dot.setAttribute('fill','rgba(28,25,23,0.65)');
+    svg.appendChild(dot);
+  });
+}
+
+window.addEventListener('resize',drawLines);
+
+function chipClick(chip){
+  if(chip.classList.contains('used')) return;
+  if(selected===chip){chip.classList.remove('selected');selected=null;return;}
+  document.querySelectorAll('.chip.selected').forEach(c=>c.classList.remove('selected'));
+  selected=chip; chip.classList.add('selected');
+}
+
+function handleDrop(dz){
+  if(!selected) return;
+  const label=selected.dataset.label;
+  const prev=placed[dz.id];
+  if(prev){const old=document.querySelector(`.chip[data-label="${CSS.escape(prev)}"]`);if(old)old.classList.remove('used');}
+  placed[dz.id]=label;
+  dz.querySelector('.dz-slot').textContent=label;
+  dz.classList.add('filled'); dz.classList.remove('correct','wrong');
+  selected.classList.remove('selected'); selected.classList.add('used');
+  selected=null; updateBadge();
+}
+
+function updateBadge(){
+  const n=Object.keys(placed).length;
+  const badge=document.getElementById('badge');
+  if(!badge.classList.contains('done')) badge.textContent=`${n} of ${TOTAL} placed`;
+}
+
+function checkAnswers(){
+  let correct=0,wrong=0,empty=0;
+  DROPS.forEach(id=>{
+    const dz=document.getElementById(id);
+    const pl=placed[id];
+    if(!pl){empty++;return;}
+    if(pl===dz.dataset.answer){dz.classList.add('correct');dz.classList.remove('wrong','filled');correct++;}
+    else{dz.classList.add('wrong');dz.classList.remove('correct','filled');wrong++;}
+  });
+  const badge=document.getElementById('badge');
+  const fb=document.getElementById('feedback');
+  if(empty>0){badge.className='badge';badge.textContent=`${correct} correct — ${empty} still empty`;}
+  else if(wrong===0){badge.className='badge done';badge.textContent=`All ${correct} correct!`;}
+  else{badge.className='badge wrong';badge.textContent=`${correct} correct, ${wrong} wrong`;}
+  if(wrong===0&&empty===0)fb.textContent='Well done — all labels correct!';
+  else if(wrong>0)fb.textContent=`${wrong} label${wrong>1?'s are':' is'} incorrect — shown in red.`;
+  else fb.textContent=`${empty} label${empty>1?'s':''} still to place.`;
+}
+
+function resetAll(){
+  DROPS.forEach(id=>{
+    const dz=document.getElementById(id);
+    dz.querySelector('.dz-slot').textContent='click to label';
+    dz.classList.remove('correct','wrong','filled');
+    delete placed[id];
+  });
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('used','selected'));
+  selected=null;
+  document.getElementById('badge').className='badge';
+  document.getElementById('badge').textContent=`${TOTAL} labels to place`;
+  document.getElementById('feedback').textContent='';
+}
+
+document.addEventListener('click',e=>{
+  if(!e.target.closest('.chip')&&!e.target.closest('.dz')){
+    document.querySelectorAll('.chip.selected').forEach(c=>c.classList.remove('selected'));
+    selected=null;
+  }
+});
+</script>
+</body>
+</html>
