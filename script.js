@@ -1,0 +1,911 @@
+// ═══════════════════════════════════
+// FIREBASE
+// ═══════════════════════════════════
+const firebaseConfig={apiKey:"AIzaSyDFoT38ZRpWKchJnTkbwst7tJIMdMoQ4jU",authDomain:"revision-21cab.firebaseapp.com",projectId:"revision-21cab",storageBucket:"revision-21cab.firebasestorage.app",messagingSenderId:"493952584873",appId:"1:493952584873:web:1a122a44fef6d42553adb8"};
+firebase.initializeApp(firebaseConfig);
+const db=firebase.firestore();
+
+// ═══════════════════════════════════
+// EMAILJS — paste your values here
+// ═══════════════════════════════════
+const EJS_PUBLIC_KEY='saPEjicUFr73FNtI2';
+const EJS_SERVICE_ID='service_6vwug5c';
+const EJS_TEMPLATE_ID='template_ipzdewe';
+const TUTOR_EMAIL='emily@dentalnurse.training';
+emailjs.init(EJS_PUBLIC_KEY);
+
+// ═══════════════════════════════════
+// ADMIN PASSWORD
+// ═══════════════════════════════════
+const ADMIN_PW='emrevision2025';
+
+// ═══════════════════════════════════
+// RESOURCE IDS
+// ═══════════════════════════════════
+const RES_TYPES=['flashcards','diagrams','practice','notes','videos','topics','blurt','mindmap','draw','memory','research'];
+
+// ═══════════════════════════════════
+// STYLE INFO
+// ═══════════════════════════════════
+const STYLE_INFO={
+  V:{label:'Visual',tagClass:'tag-v',color:'#5B21B6',bg:'#EDE9FE',desc:'You learn best through images, diagrams and colour-coding. Labelled diagrams, mind maps and visual summaries will suit you well.',tips:['Labelled diagrams and anatomical drawings','Colour-coded flashcards by topic','Mind maps for each topic area','Video demonstrations before OSCE practice']},
+  A:{label:'Auditory',tagClass:'tag-a',color:'#065F46',bg:'#E4F4EF',desc:'You absorb information best by hearing it. Reading notes aloud, verbal quizzes and discussing topics with others will suit you.',tips:['Record yourself reading key notes back','Verbal flashcard quizzes with a study partner','Talk through OSCE stations out loud','Study groups or pair revision']},
+  R:{label:'Reading/Writing',tagClass:'tag-r',color:'#1E40AF',bg:'#EFF6FF',desc:'You process information best through reading and writing. Detailed written notes, structured summaries and practice papers are your strongest tools.',tips:['Structured written summary notes by topic','Practice papers with written answers','Rewrite key points in your own words','Organised written checklists for OSCE stations']},
+  K:{label:'Kinesthetic',tagClass:'tag-k',color:'#92400E',bg:'#FEF3C7',desc:'You learn by doing. Hands-on practice, case studies and physically working through procedures help you retain information far more effectively than passive reading.',tips:['Repeated OSCE station practice with a checklist','Case study-based practice questions','Physical models and hands-on instrument handling','Apply theory to real clinical experiences']}
+};
+
+// ═══════════════════════════════════
+// VARK QUESTIONS
+// ═══════════════════════════════════
+const VARK_QS=[
+  {q:'When you are trying to remember something new, you prefer to:',opts:[{t:'Draw a diagram or write it in a mind map',s:'V'},{t:'Say it out loud or talk it through with someone',s:'A'},{t:'Write it out in notes or read it multiple times',s:'R'},{t:'Act it out or link it to something you have done',s:'K'}]},
+  {q:'When following instructions for a new task, you prefer:',opts:[{t:'A diagram or picture showing the steps',s:'V'},{t:'Someone explaining it verbally',s:'A'},{t:'A written step-by-step list',s:'R'},{t:'Just trying it out yourself',s:'K'}]},
+  {q:'In a revision session, which approach appeals most?',opts:[{t:'Colour-coded notes, highlighters or image-based cards',s:'V'},{t:'Listening to recordings or reading notes aloud',s:'A'},{t:'Rewriting notes or reading textbook chapters',s:'R'},{t:'Practising procedures or role-playing scenarios',s:'K'}]},
+  {q:'When you struggle to understand something, you:',opts:[{t:'Look for a diagram or video that explains it visually',s:'V'},{t:'Ask someone to talk through it with you',s:'A'},{t:'Find a well-written explanation and read it carefully',s:'R'},{t:'Try doing it or find a practical example',s:'K'}]},
+  {q:'How do you best remember anatomy or dental structures?',opts:[{t:'Labelled diagrams and anatomical drawings',s:'V'},{t:'Talking through each structure out loud',s:'A'},{t:'Reading descriptions and making written notes',s:'R'},{t:'Handling models or practising hands-on',s:'K'}]},
+  {q:'When revising for the NEBDN written exam, you gravitate toward:',opts:[{t:'Visual summaries, charts and colour-coded cards',s:'V'},{t:'Listening to notes back, podcasts or verbal quizzes',s:'A'},{t:'Organised written notes and past paper reading',s:'R'},{t:'Applying knowledge to case studies or real situations',s:'K'}]},
+  {q:'If you had to explain infection control to a colleague, you would:',opts:[{t:'Draw a flow diagram or use a whiteboard',s:'V'},{t:'Talk them through it verbally',s:'A'},{t:'Write it out or point them to a written policy',s:'R'},{t:'Walk through the steps practically with them',s:'K'}]},
+  {q:'When preparing for your OSCE, which helps most?',opts:[{t:'Watching videos or reviewing visual checklists',s:'V'},{t:'Talking through each station step by step',s:'A'},{t:'Reading the criteria sheet repeatedly',s:'R'},{t:'Repeated hands-on practice at each station',s:'K'}]},
+  {q:'You tend to remember things best when:',opts:[{t:'You can picture them visually in your head',s:'V'},{t:'You have heard them spoken or discussed them',s:'A'},{t:'You have read them and made written notes',s:'R'},{t:'You have physically done something linked to them',s:'K'}]},
+  {q:'Which resource would you reach for first when revising?',opts:[{t:'A revision poster or illustrated summary sheet',s:'V'},{t:'A podcast, audio recording or study group',s:'A'},{t:'A textbook chapter or detailed written notes',s:'R'},{t:'A case study, simulation or practical checklist',s:'K'}]},
+  {q:'When you attend a lecture or training session, you tend to:',opts:[{t:'Draw sketches, diagrams or doodle to help you follow along',s:'V'},{t:'Listen carefully and absorb information through what is said',s:'A'},{t:'Take detailed written notes to read back later',s:'R'},{t:'Fidget or want to try things out as they are explained',s:'K'}]},
+  {q:'After a clinical observation, you remember it best by:',opts:[{t:'Picturing what it looked like in your mind',s:'V'},{t:'Talking through what happened with a colleague',s:'A'},{t:'Writing up a reflection or reading about the procedure',s:'R'},{t:'Wanting to have a go at the procedure yourself',s:'K'}]},
+  {q:'If you are given a new piece of dental equipment, your first instinct is to:',opts:[{t:'Look at how it is put together visually',s:'V'},{t:'Ask someone to talk you through how it works',s:'A'},{t:'Read the instructions or product sheet',s:'R'},{t:'Pick it up and try to work it out by handling it',s:'K'}]},
+  {q:'When you are stressed about an exam, the approach that calms you most is:',opts:[{t:'Going through visual summaries or mind maps',s:'V'},{t:'Talking to a friend or study partner about the topics',s:'A'},{t:'Re-reading your notes and written summaries',s:'R'},{t:'Doing a practice run or simulation of the exam situation',s:'K'}]},
+  {q:'Think about a time you learned something really well. How did it happen?',opts:[{t:'I saw it demonstrated clearly or had a visual that made it click',s:'V'},{t:'Someone explained it to me and I could ask questions',s:'A'},{t:'I read about it thoroughly and took notes',s:'R'},{t:'I had a go at it myself and learned by doing',s:'K'}]},
+  {q:'How do you prefer to be given feedback on your work?',opts:[{t:'Written comments with examples or diagrams',s:'V'},{t:'Verbally — a conversation is more useful to me',s:'A'},{t:'A detailed written report I can read through',s:'R'},{t:'Shown what to do differently in a practical demonstration',s:'K'}]},
+  {q:'When you read a textbook, what do you do most naturally?',opts:[{t:'Highlight, draw arrows and add visual markers',s:'V'},{t:'Read sections aloud or mutter under your breath',s:'A'},{t:'Read carefully and make written summaries',s:'R'},{t:'Skim until you find something you can apply practically',s:'K'}]},
+  {q:'If you could design your ideal revision session, it would include:',opts:[{t:'Diagrams, colour coding and visual tools',s:'V'},{t:'A verbal quiz or discussion with someone else',s:'A'},{t:'Quiet reading and writing out key points',s:'R'},{t:'Hands-on practice or working through real scenarios',s:'K'}]},
+  {q:'When you make a mistake in a clinical or practical setting, you learn from it best by:',opts:[{t:'Watching a correct demonstration',s:'V'},{t:'Having someone talk you through what went wrong',s:'A'},{t:'Reading about the correct technique',s:'R'},{t:'Immediately trying again to get it right',s:'K'}]},
+  {q:'Which of these statements sounds most like you?',opts:[{t:'I remember faces but forget names — I think in pictures',s:'V'},{t:'I remember conversations and think things through by talking',s:'A'},{t:'I remember what I have read and keep detailed notes',s:'R'},{t:'I remember experiences and learn best by getting stuck in',s:'K'}]}
+];
+
+// Diagnostic questions loaded from Firebase at runtime — no hardcoded questions
+let DIAG_QS=[];
+
+// ═══════════════════════════════════
+// STATE
+// ═══════════════════════════════════
+let CL=null;
+let varkAnswers=[],varkIdx=0;
+let diagAnswers=[],diagIdx=0;
+let currentTab='flashcards',currentAdminTab='learners';
+let mcqDone={},researchAnswers={};
+let adminClickCount=0,adminTimer=null;
+let mmNodes=[],mmSelected=null;
+let drawCtx=null,drawPainting=false,drawColor='#1C1917',drawSize=4;
+
+// ═══════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════
+function showPage(id){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.getElementById(id).classList.add('active');window.scrollTo(0,0);}
+function signOut(){CL=null;varkAnswers=[];varkIdx=0;diagAnswers=[];diagIdx=0;mcqDone={};document.getElementById('login-name').value='';document.getElementById('login-pin').value='';showPage('page-login');}
+
+// ═══════════════════════════════════
+// LOGIN
+// ═══════════════════════════════════
+async function handleLogin(){
+  const name=document.getElementById('login-name').value.trim().toLowerCase();
+  const pin=document.getElementById('login-pin').value.trim();
+  const err=document.getElementById('login-error');
+  err.style.display='none';
+  if(!name||!pin){err.textContent='Please enter your name and PIN.';err.style.display='block';return;}
+  try{
+    const snap=await db.collection('learners').where('nameLower','==',name).where('pin','==',pin).limit(1).get();
+    if(snap.empty){err.textContent='Name or PIN not recognised.';err.style.display='block';return;}
+    CL={id:snap.docs[0].id,...snap.docs[0].data()};
+    if(!CL.varkDone)startVark();
+    else if(!CL.diagDone)startDiag();
+    else if(!CL.accessGranted)showPage('page-waiting');
+    else goResources();
+  }catch(e){err.textContent='Something went wrong — please try again.';err.style.display='block';console.error(e);}
+}
+
+// ═══════════════════════════════════
+// VARK
+// ═══════════════════════════════════
+function startVark(){varkAnswers=[];varkIdx=0;document.getElementById('quiz-name').textContent=CL.name;showPage('page-quiz');renderVark();}
+function renderVark(){
+  const q=VARK_QS[varkIdx];
+  document.getElementById('vark-progress').style.width=((varkIdx/VARK_QS.length)*100)+'%';
+  let h=`<div class="fade-up"><p class="muted small mb-2">Question ${varkIdx+1} of ${VARK_QS.length}</p><h3 style="font-size:15px;font-weight:500;margin-bottom:1.1rem;line-height:1.5">${q.q}</h3>`;
+  q.opts.forEach((o,i)=>{h+=`<button class="q-option${varkAnswers[varkIdx]===i?' selected':''}" onclick="selectVark(${i})">${o.t}</button>`;});
+  if(varkIdx>0)h+=`<button class="btn btn-ghost btn-sm mt-2" onclick="varkIdx--;renderVark()">← Back</button>`;
+  h+='</div>';
+  document.getElementById('vark-body').innerHTML=h;
+}
+function selectVark(i){varkAnswers[varkIdx]=i;renderVark();setTimeout(()=>{if(varkIdx<VARK_QS.length-1){varkIdx++;renderVark();}else finishVark();},320);}
+async function finishVark(){
+  const sc={V:0,A:0,R:0,K:0};
+  varkAnswers.forEach((a,qi)=>{sc[VARK_QS[qi].opts[a].s]++;});
+  const top=Object.keys(sc).reduce((a,b)=>sc[a]>=sc[b]?a:b);
+  CL.style=top;CL.scores=sc;CL.varkDone=true;
+  try{await db.collection('learners').doc(CL.id).update({style:top,scores:sc,varkDone:true});}catch(e){console.error(e);}
+  startDiag();
+}
+
+// ═══════════════════════════════════
+// DIAGNOSTIC
+// ═══════════════════════════════════
+async function startDiag(){
+  diagAnswers=[];diagIdx=0;
+  document.getElementById('diag-name').textContent=CL.name;
+  document.getElementById('diag-body').innerHTML='<div class="text-center mt-3"><div class="spinner"></div></div>';
+  showPage('page-diagnostic');
+  try{
+    const snap=await db.collection('diagnosticQuestions').get();
+    DIAG_QS=[];
+    snap.forEach(d=>DIAG_QS.push({id:d.id,...d.data()}));
+  }catch(e){console.error(e);}
+  if(DIAG_QS.length===0){
+    document.getElementById('diag-body').innerHTML=`<div class="card text-center" style="padding:2rem"><p style="font-weight:500;margin-bottom:8px">No diagnostic questions set yet</p><p class="muted small">Your tutor has not added any diagnostic questions yet. Click below to continue.</p><button class="btn btn-teal mt-2" onclick="skipDiag()">Continue →</button></div>`;
+    return;
+  }
+  renderDiag();
+}
+function skipDiag(){
+  CL.diagDone=true;
+  try{db.collection('learners').doc(CL.id).update({diagDone:true,accessGranted:false});}catch(e){}
+  sendEmail({},[]);
+  showPage('page-waiting');
+}
+function renderDiag(){
+  const q=DIAG_QS[diagIdx];
+  document.getElementById('diag-progress').style.width=((diagIdx/DIAG_QS.length)*100)+'%';
+  let h=`<div class="fade-up"><p class="muted small mb-2">Question ${diagIdx+1} of ${DIAG_QS.length}</p><h3 style="font-size:15px;font-weight:500;margin-bottom:1.1rem;line-height:1.5">${q.q}</h3>`;
+  q.opts.forEach((o,i)=>{h+=`<button class="q-option${diagAnswers[diagIdx]===i?' selected':''}" onclick="selectDiag(${i})">${o}</button>`;});
+  if(diagIdx>0)h+=`<button class="btn btn-ghost btn-sm mt-2" onclick="diagIdx--;renderDiag()">← Back</button>`;
+  h+='</div>';
+  document.getElementById('diag-body').innerHTML=h;
+}
+function selectDiag(i){diagAnswers[diagIdx]=i;renderDiag();setTimeout(()=>{if(diagIdx<DIAG_QS.length-1){diagIdx++;renderDiag();}else finishDiag();},320);}
+async function finishDiag(){
+  const topicRes={};
+  DIAG_QS.forEach((q,i)=>{
+    const topic=q.topic||'General';
+    if(!topicRes[topic])topicRes[topic]={correct:0,total:0,questions:[]};
+    topicRes[topic].total++;
+    const chosen=diagAnswers[i];
+    const correct=chosen===q.ans;
+    if(correct)topicRes[topic].correct++;
+    topicRes[topic].questions.push({q:q.q,chosen:q.opts[chosen],correct:q.opts[q.ans],isCorrect:correct});
+  });
+  const weak=Object.entries(topicRes).filter(([t,r])=>r.correct/r.total<0.6).map(([t])=>t);
+  CL.diagDone=true;CL.topicResults=topicRes;CL.weakTopics=weak;
+  try{await db.collection('learners').doc(CL.id).update({diagDone:true,topicResults:topicRes,weakTopics:weak,accessGranted:false});}catch(e){console.error(e);}
+  sendEmail(topicRes,weak);
+  showPage('page-waiting');
+}
+function sendEmail(topicRes,weak){
+  const info=STYLE_INFO[CL.style||'R'];
+  let breakdown='';
+  let answerDetail='';
+  Object.entries(topicRes).forEach(([t,r])=>{
+    breakdown+=`${t}: ${r.correct}/${r.total} (${Math.round(r.correct/r.total*100)}%)\n`;
+    if(r.questions){
+      r.questions.forEach(q=>{
+        answerDetail+=`\n[${q.isCorrect?'✓':'✗'}] ${q.q}\n   Their answer: ${q.chosen}\n   Correct answer: ${q.correct}\n`;
+      });
+    }
+  });
+  const msg=`New learner diagnostic completed\n\nName: ${CL.name}\nExam: ${CL.exam||'Not set'}\nExam date: ${CL.examDate||'Not set'}\n\nLearning style: ${info.label}\n\n── SCORES BY TOPIC ──\n${breakdown||'No questions answered'}\n── WEAK AREAS (below 60%) ──\n${weak.length?weak.join(', '):'None — good baseline knowledge'}\n\n── FULL ANSWER BREAKDOWN ──${answerDetail||'\nNo questions set yet'}\n\nLog in to Admin to grant access and unlock resources.`;
+  try{emailjs.send(EJS_SERVICE_ID,EJS_TEMPLATE_ID,{to_email:TUTOR_EMAIL,subject:`Revision Hub — ${CL.name} completed their assessment`,message:msg});}catch(e){console.error('EmailJS:',e);}
+}
+
+// ═══════════════════════════════════
+// RESOURCES — routing
+// ═══════════════════════════════════
+function goResources(){
+  document.getElementById('res-name').textContent=CL.name;
+  if(CL.style){const i=STYLE_INFO[CL.style];document.getElementById('res-style-tag').innerHTML=`<span class="tag ${i.tagClass}">${i.label}</span>`;}
+  // Build tabs dynamically — only show unlocked ones
+  const TAB_LABELS={flashcards:'Flashcards',diagrams:'Diagrams',practice:'Practice Qs',notes:'Notes',videos:'Videos',topics:'Topic list',blurt:'Mind dump',mindmap:'Mind map',draw:'Draw',memory:'Memory aids',research:'Research'};
+  const tabBar=document.getElementById('res-tabs');
+  tabBar.innerHTML='';
+  const unlocked=(CL.unlocked||[]);
+  let firstTab=null;
+  unlocked.forEach((id,i)=>{
+    if(!TAB_LABELS[id])return;
+    const btn=document.createElement('button');
+    btn.className='tab-btn'+(i===0?' active':'');
+    btn.textContent=TAB_LABELS[id];
+    btn.onclick=function(){switchTab(id,this);};
+    tabBar.appendChild(btn);
+    if(!firstTab)firstTab=id;
+  });
+  // Always add settings tab at end
+  const settBtn=document.createElement('button');
+  settBtn.className='tab-btn';
+  settBtn.textContent='⚙ Settings';
+  settBtn.onclick=function(){switchTab('settings',this);};
+  tabBar.appendChild(settBtn);
+  currentTab=firstTab||'settings';
+  showPage('page-resources');renderResTab();
+}
+function switchTab(tab,el){currentTab=tab;document.querySelectorAll('#res-tabs .tab-btn').forEach(t=>t.classList.remove('active'));el.classList.add('active');renderResTab();}
+function isUnlocked(id){return CL.unlocked&&CL.unlocked.includes(id);}
+function lockedCard(){return `<div class="locked-card"><div class="lock-icon">🔒</div><p style="font-weight:500">Not unlocked yet</p><p class="muted small" style="max-width:280px">Your tutor will unlock this resource after your intro call.</p></div>`;}
+
+async function renderResTab(){
+  const c=document.getElementById('res-content');
+  c.innerHTML='<div class="text-center mt-3"><div class="spinner"></div></div>';
+  if(currentTab==='flashcards')c.innerHTML=await renderFlashcards();
+  else if(currentTab==='diagrams')c.innerHTML=await renderDiagrams();
+  else if(currentTab==='practice')c.innerHTML=await renderPractice();
+  else if(currentTab==='notes')c.innerHTML=await renderNotes();
+  else if(currentTab==='videos')c.innerHTML=await renderVideos();
+  else if(currentTab==='topics')c.innerHTML=await renderTopics();
+  else if(currentTab==='blurt'){c.innerHTML=renderBlurt();loadBlurtHistory();}
+  else if(currentTab==='mindmap'){c.innerHTML=renderMindmapShell();initMindmap();}
+  else if(currentTab==='draw'){c.innerHTML=renderDrawShell();initDraw();}
+  else if(currentTab==='memory')c.innerHTML=await renderMemory();
+  else if(currentTab==='research')c.innerHTML=await renderResearch();
+  else if(currentTab==='settings')c.innerHTML=renderSettings();
+}
+
+// ═══════════════════════════════════
+// FLASHCARDS — learner builds own
+// ═══════════════════════════════════
+async function renderFlashcards(){
+  if(!isUnlocked('flashcards'))return lockedCard();
+  let cards=[];
+  try{const s=await db.collection('learners').doc(CL.id).collection('flashcards').orderBy('createdAt','desc').get();s.forEach(d=>cards.push({id:d.id,...d.data()}));}catch(e){}
+  const hint=CL.weakTopics&&CL.weakTopics.length?`<div class="card mb-3" style="background:var(--amber-light);border-color:#FCD34D"><p style="font-size:13px;font-weight:500;color:var(--amber);margin-bottom:4px">Suggested topics to make cards for</p><p class="small" style="color:var(--amber)">Based on your diagnostic: <strong>${CL.weakTopics.join(', ')}</strong></p></div>`:'';
+  let h=hint+`<div class="flex-between mb-3"><p class="muted small">${cards.length} card${cards.length!==1?'s':''} — click to flip</p><button class="btn btn-teal btn-sm" onclick="showAddCard()">+ New card</button></div>
+  <div id="add-card-form" class="card mb-3" style="display:none">
+    <div class="field"><label>Front — question or term</label><input type="text" id="fc-front" placeholder="e.g. What does BPE stand for?"/></div>
+    <div class="field"><label>Back — answer</label><textarea id="fc-back" placeholder="e.g. Basic Periodontal Examination"></textarea></div>
+    <div class="field"><label>Topic</label><input type="text" id="fc-topic" placeholder="e.g. Periodontics"/></div>
+    <div class="flex"><button class="btn btn-primary btn-sm" onclick="saveCard()">Save card</button><button class="btn btn-outline btn-sm" onclick="document.getElementById('add-card-form').style.display='none'">Cancel</button></div>
+  </div><div class="grid-2">`;
+  cards.forEach(fc=>{
+    h+=`<div class="flashcard" id="fc-${fc.id}" onclick="this.classList.toggle('flipped')"><div class="fc-inner">
+      <div class="fc-front"><p class="muted" style="font-size:11px;margin-bottom:8px">${fc.topic||''}</p><p style="font-size:14px;font-weight:500;line-height:1.5">${fc.front}</p><p class="muted" style="font-size:11px;margin-top:8px">Tap to flip</p></div>
+      <div class="fc-back"><p style="font-size:13px;line-height:1.6;color:#065F46">${fc.back}</p><button class="btn btn-danger btn-xs" style="margin-top:10px" onclick="event.stopPropagation();deleteCard('${fc.id}')">Delete</button></div>
+    </div></div>`;
+  });
+  if(!cards.length)h+=`<div class="card text-center" style="padding:2rem;grid-column:1/-1"><p class="muted small">No cards yet — create your first one above.</p></div>`;
+  h+='</div>';
+  return h;
+}
+function showAddCard(){document.getElementById('add-card-form').style.display='block';document.getElementById('fc-front').focus();}
+async function saveCard(){
+  const front=document.getElementById('fc-front').value.trim();
+  const back=document.getElementById('fc-back').value.trim();
+  const topic=document.getElementById('fc-topic').value.trim();
+  if(!front||!back)return;
+  await db.collection('learners').doc(CL.id).collection('flashcards').add({front,back,topic,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+  renderResTab();
+}
+async function deleteCard(id){if(!confirm('Delete this card?'))return;await db.collection('learners').doc(CL.id).collection('flashcards').doc(id).delete();renderResTab();}
+
+// ═══════════════════════════════════
+// DIAGRAMS — admin uploads
+// ═══════════════════════════════════
+async function renderDiagrams(){
+  if(!isUnlocked('diagrams'))return lockedCard();
+  let sheets=[];
+  try{
+    const s=await db.collection('worksheets').get();
+    s.forEach(d=>{if(d.data().active!==false)sheets.push({id:d.id,...d.data()});});
+  }catch(e){console.error('worksheets:',e);}
+  if(!sheets.length)return`<div class="locked-card"><p class="muted small">No worksheets added yet — check back after your intro call.</p></div>`;
+  let h='<div class="grid-2">';
+  sheets.forEach(s=>{
+    h+=`<div class="card">
+      <p style="font-weight:500;margin-bottom:6px">${s.title}</p>
+      <p class="muted small mb-3">${s.description||''}</p>
+      ${s.imageUrl?`<img src="${s.imageUrl}" style="width:100%;border-radius:var(--r);margin-bottom:10px" alt="${s.title}"/>`:''}
+      <div style="display:flex;flex-direction:column;gap:8px">
+        ${s.pdfUrl?`<a href="${s.pdfUrl}" target="_blank" class="btn btn-teal btn-sm">Open / download PDF →</a>`:''}
+        ${s.linkUrl?`<a href="${s.linkUrl}" target="_blank" class="btn btn-outline btn-sm">Open worksheet →</a>`:''}
+      </div>
+    </div>`;
+  });
+  h+='</div>';
+  return h;
+}
+
+// ═══════════════════════════════════
+// SETTINGS — change PIN
+// ═══════════════════════════════════
+function renderSettings(){
+  return`<div class="card" style="max-width:420px;margin:0 auto">
+    <h3 style="font-size:15px;font-weight:500;margin-bottom:1rem">Account settings</h3>
+    <div class="field"><label>Current PIN</label><input type="password" id="pin-current" maxlength="4" placeholder="Enter your current 4-digit PIN"/></div>
+    <div class="field"><label>New PIN</label><input type="password" id="pin-new" maxlength="4" placeholder="Choose a new 4-digit PIN"/></div>
+    <div class="field"><label>Confirm new PIN</label><input type="password" id="pin-confirm" maxlength="4" placeholder="Repeat your new PIN"/></div>
+    <button class="btn btn-teal" onclick="changePin()" style="width:100%">Update PIN</button>
+    <p id="pin-msg" class="muted small mt-2" style="min-height:20px"></p>
+  </div>`;
+}
+async function changePin(){
+  const current=document.getElementById('pin-current').value.trim();
+  const newPin=document.getElementById('pin-new').value.trim();
+  const confirm=document.getElementById('pin-confirm').value.trim();
+  const msg=document.getElementById('pin-msg');
+  if(!current||!newPin||!confirm){msg.textContent='Please fill in all fields.';return;}
+  if(current!==CL.pin){msg.textContent='Current PIN is incorrect.';return;}
+  if(newPin.length!==4||!/^\d{4}$/.test(newPin)){msg.textContent='New PIN must be exactly 4 digits.';return;}
+  if(newPin!==confirm){msg.textContent='New PINs do not match.';return;}
+  try{
+    await db.collection('learners').doc(CL.id).update({pin:newPin});
+    CL.pin=newPin;
+    msg.style.color='var(--green)';
+    msg.textContent='PIN updated successfully!';
+    document.getElementById('pin-current').value='';
+    document.getElementById('pin-new').value='';
+    document.getElementById('pin-confirm').value='';
+  }catch(e){msg.textContent='Something went wrong — please try again.';}
+}
+
+// ═══════════════════════════════════
+// PRACTICE QUESTIONS
+// ═══════════════════════════════════
+async function renderPractice(){
+  if(!isUnlocked('practice'))return lockedCard();
+  let qs=[];
+  try{const s=await db.collection('practiceQuestions').where('active','==',true).orderBy('createdAt','desc').get();s.forEach(d=>qs.push({id:d.id,...d.data()}));}catch(e){}
+  if(!qs.length)qs=[
+    {id:'b1',q:'A patient presents with bleeding on probing at multiple sites. Which condition is most likely?',opts:['Dental caries','Gingivitis','Pericoronitis','Pulpitis'],ans:1,exp:'Bleeding on probing is a classic sign of gingivitis caused by plaque-induced gingival inflammation.',exam:'Diploma'},
+    {id:'b2',q:'What is the correct decontamination sequence?',opts:['Sterilise, clean, disinfect','Disinfect, clean, sterilise','Clean, disinfect, sterilise','Clean, sterilise, disinfect'],ans:2,exp:'Always clean first to remove debris, then disinfect, then sterilise.',exam:'OSCE'},
+    {id:'b3',q:'A patient asks how often to replace their toothbrush. What is correct?',opts:['Every 6 months','Every 3 months or when bristles fray','Once a year','Only when visibly worn'],ans:1,exp:'Every 3 months or sooner if bristles are frayed — worn brushes are less effective.',exam:'OHE'},
+    {id:'r1',q:'Which type of radiograph gives the best view of the full root and surrounding bone of a single tooth?',opts:['Bitewing','Panoramic (OPG)','Periapical','Occlusal'],ans:2,exp:'Periapical radiographs show the whole tooth from crown to root apex and the surrounding alveolar bone, making them ideal for assessing root morphology and periapical pathology.',exam:'Diploma'},
+    {id:'r2',q:'What is the primary purpose of a bitewing radiograph?',opts:['Assessing root length','Detecting interproximal caries and alveolar bone levels','Viewing unerupted teeth','Assessing the temporomandibular joint'],ans:1,exp:'Bitewing radiographs show the crowns of upper and lower posterior teeth on the same image, making them ideal for detecting interproximal caries and monitoring alveolar bone levels.',exam:'Diploma'},
+    {id:'r3',q:'Under current guidelines, who is responsible for justifying and grading a dental radiograph?',opts:['The dental nurse','The receptionist','The prescribing dentist','The radiographer'],ans:2,exp:'Under IR(ME)R 2017, the prescribing dentist is responsible for justifying the exposure (is it clinically necessary?) and grading the resultant image.',exam:'Diploma'},
+    {id:'r4',q:'What does ALARP stand for in radiography?',opts:['As Low As Reasonably Practicable','Always Limit All Radiation Properly','As Low As Radiographically Possible','Adequate Levels Are Routinely Provided'],ans:0,exp:'ALARP means doses of radiation should be kept As Low As Reasonably Practicable. This underpins radiation protection in dentistry — we use the minimum exposure needed to achieve a diagnostic image.',exam:'Diploma'},
+    {id:'me1',q:'A patient in the dental chair becomes pale, sweaty and loses consciousness briefly, then recovers quickly. What is the most likely cause?',opts:['Epileptic seizure','Anaphylaxis','Vasovagal syncope (faint)','Hypoglycaemia'],ans:2,exp:'Vasovagal syncope is the most common medical emergency in dentistry. It is triggered by anxiety or pain, causing a drop in blood pressure and brief loss of consciousness. The patient recovers rapidly when laid flat with legs raised.',exam:'Diploma'},
+    {id:'me2',q:'What is the first-line treatment for anaphylaxis?',opts:['Oral antihistamine','Intramuscular adrenaline (epinephrine)','Salbutamol inhaler','Aspirin 300mg'],ans:1,exp:'Intramuscular adrenaline (0.5mg in adults) into the outer thigh is the first-line treatment for anaphylaxis. It reverses bronchospasm, vasodilation and hypotension. Call 999 immediately.',exam:'Diploma'},
+    {id:'me3',q:'A patient with known asthma begins wheezing and struggling to breathe during treatment. What should you do first?',opts:['Lay them flat and raise their legs','Give their reliever inhaler (usually blue)','Administer oxygen immediately','Call 999'],ans:1,exp:'For an acute asthma attack, the first step is to give the patient their reliever inhaler (salbutamol, usually blue). Sit them upright and keep them calm. If there is no improvement, call 999 and administer oxygen.',exam:'Diploma'},
+    {id:'me4',q:'What position should an unconscious but breathing patient be placed in?',opts:['Supine (flat on their back)','Recovery position (on their side)','Sitting upright','Trendelenburg (head lower than feet)'],ans:1,exp:'An unconscious but breathing patient should be placed in the recovery position (lateral position) to maintain a clear airway and prevent aspiration if they vomit.',exam:'Diploma'},
+    {id:'tm1',q:'How many cusps does a maxillary first molar typically have?',opts:['3','4','5','6'],ans:2,exp:'The maxillary first molar typically has 4 major cusps (mesiobuccal, distobuccal, mesiopalatal, distopalatal) and often a fifth smaller cusp of Carabelli on the mesiopalatal cusp.',exam:'Diploma'},
+    {id:'tm2',q:'Which permanent tooth has the longest root in the mouth?',opts:['Maxillary central incisor','Mandibular first molar','Maxillary canine','Mandibular canine'],ans:2,exp:'The maxillary canine has the longest root of any permanent tooth. This is clinically significant as canine extractions can be complex and the teeth are important for occlusal stability.',exam:'Diploma'},
+    {id:'tm3',q:'The deciduous dentition consists of how many teeth in total?',opts:['24','20','28','32'],ans:1,exp:'The deciduous (primary/milk) dentition consists of 20 teeth — 5 in each quadrant: 2 incisors, 1 canine and 2 molars. There are no premolars in the deciduous dentition.',exam:'Diploma'},
+    {id:'perio1',q:'A BPE score of 3 indicates which of the following?',opts:['Healthy gingiva','Pocket depth of 3.5-5.5mm','Pocket depth of 6mm or more','Calculus present but pockets within normal limits'],ans:1,exp:'A BPE code 3 indicates a pocket depth of 3.5-5.5mm, meaning the black band of the probe is partially visible. This indicates early to moderate periodontitis and requires treatment planning.',exam:'Diploma'},
+    {id:'perio2',q:'What is the key difference between gingivitis and periodontitis?',opts:['Gingivitis causes bone loss, periodontitis does not','Periodontitis is reversible, gingivitis is not','Periodontitis involves irreversible bone and attachment loss, gingivitis does not','They are the same condition at different stages and both are reversible'],ans:2,exp:'Gingivitis is inflammation of the gingiva only and is reversible with good oral hygiene. Periodontitis involves irreversible destruction of the periodontal ligament and alveolar bone.',exam:'Diploma'},
+    {id:'perio3',q:'Which local factor is considered the primary cause of periodontal disease?',opts:['Calculus','Dental plaque (biofilm)','Overhanging restorations','Mouth breathing'],ans:1,exp:'Dental plaque (bacterial biofilm) is the primary aetiological factor in periodontal disease. Calculus, overhangs and other factors are secondary — they retain plaque and make it harder to remove.',exam:'Diploma'},
+    {id:'dm1',q:'Which material is commonly used as a base or liner under deep restorations to protect the pulp?',opts:['Zinc oxide eugenol (ZOE)','Composite resin','Amalgam','Glass ionomer cement'],ans:3,exp:'Glass ionomer cement (GIC) is commonly used as a base or liner under restorations due to its adhesion to dentine, fluoride release and biocompatibility. ZOE is also used but has specific indications.',exam:'Diploma'},
+    {id:'dm2',q:'What is the setting mechanism of dental amalgam?',opts:['A chemical acid-base reaction','Light curing','An alloy reaction between mercury and silver-tin alloy','Evaporation of a solvent'],ans:2,exp:'Dental amalgam sets through an alloy reaction between liquid mercury and a silver-tin alloy powder (lathe-cut or spherical). The resulting crystalline structure hardens over time.',exam:'Diploma'},
+    {id:'dm3',q:'Which impression material is most commonly used for crown and bridge work due to its accuracy?',opts:['Alginate','Zinc oxide eugenol paste','Polyvinyl siloxane (PVS/addition silicone)','Plaster of Paris'],ans:2,exp:'Polyvinyl siloxane (addition silicone) is the gold standard impression material for crown and bridge work. It has excellent dimensional stability, detail reproduction and tear resistance.',exam:'Diploma'},
+    {id:'oha1',q:'A parent asks when they should start brushing their child\'s teeth. What is the correct advice?',opts:['When all deciduous teeth have erupted','As soon as the first tooth appears','At age 2','When the child can hold a toothbrush themselves'],ans:1,exp:'Brushing should begin as soon as the first tooth erupts, using a smear of fluoride toothpaste (1000ppm) for children under 3. This establishes good habits early and protects newly erupted teeth.',exam:'OHE'},
+    {id:'oha2',q:'Which of the following dietary advice is most important for reducing caries risk?',opts:['Avoid all sugar completely','Reduce the frequency of sugary food and drink intake','Switch to sugar-free sweets only','Only eat sugar at mealtimes and brush immediately after'],ans:1,exp:'Reducing the frequency of sugar intake is the key message. Each sugar exposure causes an acid attack on enamel lasting around 20 minutes. Fewer exposures means fewer acid attacks and less demineralisation.',exam:'OHE'},
+    {id:'oha3',q:'What does the term "erosion" describe in the context of tooth surface loss?',opts:['Wear caused by tooth-to-tooth contact','Wear caused by abrasive substances','Chemical dissolution of tooth tissue by acid not produced by bacteria','Wear at the gingival margin from toothbrushing'],ans:2,exp:'Erosion is tooth surface loss caused by chemical dissolution from dietary or gastric acids — not bacterial acid. Common sources include fizzy drinks, citrus fruits and acid reflux (GORD).',exam:'OHE'},
+    {id:'ins1',q:'What is the function of a Mitchell\'s trimmer?',opts:['Removing caries','Carving amalgam','Removing overhanging margins and trimming composite','Placing matrix bands'],ans:2,exp:'A Mitchell\'s trimmer is used for removing overhanging restoration margins and trimming materials such as composite and temporary crowns. It has a curved, blade-like working end.',exam:'Diploma'},
+    {id:'ins2',q:'Which instrument is used to measure pocket depth during a periodontal assessment?',opts:['College tweezers','Briault probe','Williams/BPE periodontal probe','Flat plastic'],ans:2,exp:'A Williams or BPE periodontal probe is used to measure pocket depth in millimetres. It has calibrated markings to allow accurate recording of depths around each tooth.',exam:'Diploma'},
+    {id:'ins3',q:'What is the purpose of a matrix band and Tofflemire retainer?',opts:['To isolate the tooth from saliva','To create a temporary wall to restore the proximal surface of a tooth','To hold the rubber dam in place','To mix dental materials'],ans:1,exp:'A matrix band held in a Tofflemire retainer creates a temporary proximal wall when restoring Class II cavities. This allows the restorative material to be condensed and shaped correctly.',exam:'OSCE'},
+    {id:'sg1',q:'Which piece of legislation provides the primary framework for child protection in England?',opts:['The Health and Safety at Work Act 1974','The Children Act 1989 and 2004','The Care Act 2014','The Mental Capacity Act 2005'],ans:1,exp:'The Children Act 1989 (amended 2004) is the primary legislation for child protection in England. It establishes the duty to safeguard and promote the welfare of children and defines key responsibilities.',exam:'Diploma'},
+    {id:'sg2',q:'A child attends with bruising in unusual locations such as the ears and neck. What should the dental team do?',opts:['Ignore it as it is not dental-related','Treat the child and make a note in the records','Follow the practice safeguarding policy, document carefully and refer to the safeguarding lead','Ask the parent directly what happened'],ans:2,exp:'Unusual bruising in areas not typical of accidental injury (ears, neck, buttocks) is a potential indicator of abuse. The dental team must follow the practice safeguarding policy, document accurately and refer to the named safeguarding lead without delay.',exam:'Diploma'},
+    {id:'sg3',q:'What does the term "Fraser guidelines" relate to in dental practice?',opts:['Infection control standards','Consent and confidentiality for young people under 16','Radiography justification criteria','Medical emergency management'],ans:1,exp:'Fraser guidelines (from the Gillick competence ruling) relate to providing treatment and advice to young people under 16 without parental consent. A young person is Fraser competent if they have sufficient maturity and understanding to consent to treatment themselves.',exam:'Diploma'}
+  ];
+  let h=`<p class="muted small mb-3">Select the best answer. Explanations shown after answering.</p>`;
+  qs.forEach((q)=>{
+    const ec=q.exam==='Diploma'?'tag-diploma':q.exam==='OSCE'?'tag-osce':'tag-ohe';
+    h+=`<div class="card mb-3 fade-up"><div class="flex-between mb-2"><p style="font-size:14px;font-weight:500;flex:1;padding-right:12px;line-height:1.5">${q.q}</p>${q.exam?`<span class="tag ${ec}">${q.exam}</span>`:''}</div>`;
+    q.opts.forEach((opt,oi)=>{
+      let cls='mcq-opt',dis='';
+      if(mcqDone[q.id]!==undefined){dis=' disabled';if(oi===q.ans)cls+=' correct';else if(oi===mcqDone[q.id])cls+=' wrong';}
+      h+=`<button class="${cls}"${dis} onclick="answerQ('${q.id}',${oi},${q.ans})">${opt}</button>`;
+    });
+    if(mcqDone[q.id]!==undefined)h+=`<div style="margin-top:8px;padding:10px 12px;background:var(--teal-light);border-radius:var(--r);font-size:13px;color:#065F46;line-height:1.6">${q.exp}</div>`;
+    h+='</div>';
+  });
+  return h;
+}
+function answerQ(id,chosen){mcqDone[id]=chosen;renderResTab();}
+
+// ═══════════════════════════════════
+// NOTES
+// ═══════════════════════════════════
+async function renderNotes(){
+  if(!isUnlocked('notes'))return lockedCard();
+  let saved='';
+  try{const d=await db.collection('learners').doc(CL.id).collection('notes').doc('main').get();if(d.exists)saved=d.data().content||'';}catch(e){}
+  return`<div class="card"><p style="font-weight:500;margin-bottom:10px">My revision notes</p>
+    <textarea class="note-area" id="notes-area" placeholder="Type your notes here — they save automatically...">${saved}</textarea>
+    <div class="flex mt-2"><button class="btn btn-teal btn-sm" onclick="saveNotes()">Save notes</button><span id="notes-saved" class="muted small" style="display:none">Saved ✓</span></div>
+  </div>`;
+}
+async function saveNotes(){
+  const content=document.getElementById('notes-area').value;
+  await db.collection('learners').doc(CL.id).collection('notes').doc('main').set({content,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+  const el=document.getElementById('notes-saved');el.style.display='inline';setTimeout(()=>el.style.display='none',2000);
+}
+
+// ═══════════════════════════════════
+// VIDEOS
+// ═══════════════════════════════════
+async function renderVideos(){
+  if(!isUnlocked('videos'))return lockedCard();
+  let vids=[];
+  try{const s=await db.collection('videos').where('active','==',true).orderBy('createdAt','desc').get();s.forEach(d=>vids.push({id:d.id,...d.data()}));}catch(e){}
+  if(!vids.length)return`<div class="locked-card"><p class="muted small">No videos added yet — check back soon.</p></div>`;
+  let h='<div class="grid-2">';
+  vids.forEach(v=>{
+    const ytId=v.youtubeUrl?v.youtubeUrl.match(/(?:v=|youtu\.be\/)([^&\s]+)/)?.[1]:'';
+    h+=`<div class="video-card"><div class="video-thumb">${ytId?`<iframe src="https://www.youtube.com/embed/${ytId}" allowfullscreen></iframe>`:`<span style="color:#fff;font-size:13px">No preview</span>`}</div><div style="padding:12px"><p style="font-weight:500;margin-bottom:4px">${v.title}</p><p class="muted small">${v.description||''}</p></div></div>`;
+  });
+  h+='</div>';
+  return h;
+}
+
+// ═══════════════════════════════════
+// TOPIC CHECKLIST
+// ═══════════════════════════════════
+async function renderTopics(){
+  if(!isUnlocked('topics'))return lockedCard();
+  let lists=[],checked={};
+  try{
+    const s=await db.collection('topicLists').where('active','==',true).orderBy('createdAt','desc').get();s.forEach(d=>lists.push({id:d.id,...d.data()}));
+    const cd=await db.collection('learners').doc(CL.id).collection('topicProgress').doc('checked').get();if(cd.exists)checked=cd.data()||{};
+  }catch(e){}
+  if(!lists.length&&CL.weakTopics&&CL.weakTopics.length)lists=[{id:'auto',title:'Focus areas from your diagnostic',topics:CL.weakTopics}];
+  if(!lists.length)return`<div class="locked-card"><p class="muted small">No topic lists added yet — your tutor will add these.</p></div>`;
+  let h='';
+  lists.forEach(list=>{
+    h+=`<div class="card mb-3"><p style="font-weight:500;margin-bottom:12px">${list.title}</p>`;
+    (list.topics||[]).forEach((topic,i)=>{
+      const key=`${list.id}-${i}`;const done=checked[key]||false;
+      h+=`<div class="checkbox-item${done?' done':''}"><input type="checkbox" id="cb-${key}" ${done?'checked':''} onchange="toggleCheck('${key}',this.checked)"/><span>${topic}</span></div>`;
+    });
+    h+='</div>';
+  });
+  return h;
+}
+async function toggleCheck(key,val){try{await db.collection('learners').doc(CL.id).collection('topicProgress').doc('checked').set({[key]:val},{merge:true});}catch(e){}}
+
+// ═══════════════════════════════════
+// MIND DUMP
+// ═══════════════════════════════════
+function renderBlurt(){
+  if(!isUnlocked('blurt'))return lockedCard();
+  return`<div class="card mb-3"><p style="font-weight:500;margin-bottom:4px">Mind dump</p>
+    <p class="muted small mb-3">Write down everything you can remember about a topic without looking anything up. Then check your notes to see what you missed.</p>
+    <div class="field"><label>Topic</label><input type="text" id="blurt-topic" placeholder="e.g. Infection control"/></div>
+    <textarea class="blurt-area" id="blurt-area" placeholder="Start writing — get everything out of your head..."></textarea>
+    <div class="flex mt-2 flex-between"><button class="btn btn-teal btn-sm" onclick="saveBlurt()">Save</button><button class="btn btn-outline btn-sm" onclick="document.getElementById('blurt-area').value='';document.getElementById('blurt-topic').value=''">Clear</button></div>
+  </div><div id="blurt-history"></div>`;
+}
+async function saveBlurt(){
+  const topic=document.getElementById('blurt-topic').value.trim();
+  const content=document.getElementById('blurt-area').value.trim();
+  if(!content)return;
+  await db.collection('learners').doc(CL.id).collection('blurts').add({topic:topic||'Untitled',content,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+  document.getElementById('blurt-area').value='';document.getElementById('blurt-topic').value='';
+  loadBlurtHistory();
+}
+async function loadBlurtHistory(){
+  const el=document.getElementById('blurt-history');if(!el)return;
+  try{
+    const s=await db.collection('learners').doc(CL.id).collection('blurts').orderBy('createdAt','desc').limit(5).get();
+    let h='';s.forEach(d=>{const dat=d.data();h+=`<div class="card mb-2"><div class="flex-between mb-1"><span style="font-weight:500;font-size:13px">${dat.topic}</span><button class="btn btn-danger btn-xs" onclick="deleteBlurt('${d.id}')">Delete</button></div><p style="font-size:13px;color:var(--ink-light);line-height:1.7;white-space:pre-wrap">${dat.content}</p></div>`;});
+    el.innerHTML=h||'<p class="muted small">No saved dumps yet.</p>';
+  }catch(e){}
+}
+async function deleteBlurt(id){await db.collection('learners').doc(CL.id).collection('blurts').doc(id).delete();loadBlurtHistory();}
+
+// ═══════════════════════════════════
+// MIND MAP
+// ═══════════════════════════════════
+function renderMindmapShell(){
+  if(!isUnlocked('mindmap'))return lockedCard();
+  return`<div class="card mb-2"><div class="flex-between mb-2"><p style="font-weight:500">Mind map builder</p>
+    <div class="flex"><button class="btn btn-outline btn-sm" onclick="addMmNode()">+ Add node</button><button class="btn btn-outline btn-sm" onclick="clearMm()">Clear</button><button class="btn btn-teal btn-sm" onclick="saveMm()">Save</button></div>
+  </div><p class="muted small mb-2">Double-click the canvas to add a node. Click a node to select it, drag to move. The first node becomes the central topic.</p>
+  <div class="mm-canvas" id="mm-canvas"><svg class="mm-svg" id="mm-svg"></svg></div></div>`;
+}
+function initMindmap(){
+  const canvas=document.getElementById('mm-canvas');if(!canvas)return;
+  mmNodes=[];mmSelected=null;loadMm();
+  canvas.addEventListener('dblclick',e=>{if(e.target===canvas||e.target.classList.contains('mm-svg'))addMmNodeAt(e.offsetX,e.offsetY);});
+}
+function addMmNode(){const text=prompt('Node label:');if(!text)return;const canvas=document.getElementById('mm-canvas');if(!canvas)return;addMmNodeAt(Math.random()*280+60,Math.random()*200+80,text);}
+function addMmNodeAt(x,y,text){
+  if(!text){text=prompt('Node label:');if(!text)return;}
+  const id='n'+Date.now();
+  mmNodes.push({id,text,x,y,central:mmNodes.length===0,parent:mmSelected||null});
+  renderMm();
+}
+function renderMm(){
+  const canvas=document.getElementById('mm-canvas');const svg=document.getElementById('mm-svg');if(!canvas||!svg)return;
+  canvas.querySelectorAll('.mm-node').forEach(n=>n.remove());svg.innerHTML='';
+  mmNodes.forEach(n=>{
+    if(n.parent){const p=mmNodes.find(x=>x.id===n.parent);if(p){const line=document.createElementNS('http://www.w3.org/2000/svg','line');line.setAttribute('x1',p.x+50);line.setAttribute('y1',p.y+18);line.setAttribute('x2',n.x+50);line.setAttribute('y2',n.y+18);line.setAttribute('stroke','#C8C0B4');line.setAttribute('stroke-width','1.5');svg.appendChild(line);}}
+    const el=document.createElement('div');
+    el.className='mm-node'+(n.central?' central':'')+(mmSelected===n.id?' selected':'');
+    el.id='mmn-'+n.id;el.textContent=n.text;el.style.left=n.x+'px';el.style.top=n.y+'px';
+    el.onclick=e=>{e.stopPropagation();mmSelected=n.id;document.querySelectorAll('.mm-node').forEach(x=>x.classList.remove('selected'));el.classList.add('selected');};
+    el.ondblclick=e=>{e.stopPropagation();const t=prompt('Rename:',n.text);if(t){n.text=t;el.textContent=t;}};
+    let ox,oy;
+    el.onmousedown=e=>{e.stopPropagation();ox=e.clientX-n.x;oy=e.clientY-n.y;
+      const mm=e=>{n.x=e.clientX-ox;n.y=e.clientY-oy;el.style.left=n.x+'px';el.style.top=n.y+'px';redrawLines();};
+      const mu=()=>{document.removeEventListener('mousemove',mm);document.removeEventListener('mouseup',mu);};
+      document.addEventListener('mousemove',mm);document.addEventListener('mouseup',mu);
+    };
+    canvas.appendChild(el);
+  });
+}
+function redrawLines(){const svg=document.getElementById('mm-svg');if(!svg)return;svg.innerHTML='';mmNodes.forEach(n=>{if(n.parent){const p=mmNodes.find(x=>x.id===n.parent);if(p){const line=document.createElementNS('http://www.w3.org/2000/svg','line');line.setAttribute('x1',p.x+50);line.setAttribute('y1',p.y+18);line.setAttribute('x2',n.x+50);line.setAttribute('y2',n.y+18);line.setAttribute('stroke','#C8C0B4');line.setAttribute('stroke-width','1.5');svg.appendChild(line);}}});}
+function clearMm(){if(confirm('Clear the mind map?')){mmNodes=[];mmSelected=null;renderMm();}}
+async function saveMm(){try{await db.collection('learners').doc(CL.id).collection('mindmaps').doc('main').set({nodes:mmNodes,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});alert('Mind map saved!');}catch(e){console.error(e);}}
+async function loadMm(){try{const d=await db.collection('learners').doc(CL.id).collection('mindmaps').doc('main').get();if(d.exists&&d.data().nodes){mmNodes=d.data().nodes;renderMm();}}catch(e){}}
+
+// ═══════════════════════════════════
+// DRAW
+// ═══════════════════════════════════
+function renderDrawShell(){
+  if(!isUnlocked('draw'))return lockedCard();
+  return`<div class="card"><div class="flex-between mb-2"><p style="font-weight:500">Draw and annotate</p>
+    <div class="flex" style="flex-wrap:wrap;gap:6px">
+      <input type="color" id="draw-color" value="#1C1917" onchange="drawColor=this.value" style="width:32px;height:32px;border:none;padding:0;cursor:pointer;background:none" title="Pen colour"/>
+      <select id="draw-size" onchange="drawSize=parseInt(this.value)" style="width:auto;padding:5px 8px;font-size:13px"><option value="2">Fine</option><option value="4" selected>Medium</option><option value="8">Bold</option><option value="16">Thick</option></select>
+      <button class="btn btn-outline btn-sm" onclick="clearDraw()">Clear</button>
+    </div>
+  </div>
+  <canvas class="draw-canvas" id="draw-canvas" width="800" height="380"></canvas>
+  <p class="muted small mt-2">Sketch diagrams, label anatomy or practise OSCE setups. Works with a mouse or stylus.</p>
+  </div>`;
+}
+function initDraw(){
+  const c=document.getElementById('draw-canvas');if(!c)return;
+  drawCtx=c.getContext('2d');
+  const pos=(c,e)=>{const r=c.getBoundingClientRect();return{x:(e.clientX-r.left)*(c.width/r.width),y:(e.clientY-r.top)*(c.height/r.height)};};
+  const tpos=(c,e)=>{const r=c.getBoundingClientRect(),t=e.touches[0];return{x:(t.clientX-r.left)*(c.width/r.width),y:(t.clientY-r.top)*(c.height/r.height)};};
+  c.onmousedown=e=>{drawPainting=true;drawCtx.beginPath();const p=pos(c,e);drawCtx.moveTo(p.x,p.y);};
+  c.onmousemove=e=>{if(!drawPainting)return;const p=pos(c,e);drawCtx.lineTo(p.x,p.y);drawCtx.strokeStyle=drawColor;drawCtx.lineWidth=drawSize;drawCtx.lineCap='round';drawCtx.stroke();};
+  c.onmouseup=()=>drawPainting=false;c.onmouseleave=()=>drawPainting=false;
+  c.addEventListener('touchstart',e=>{e.preventDefault();drawPainting=true;drawCtx.beginPath();const p=tpos(c,e);drawCtx.moveTo(p.x,p.y);},{passive:false});
+  c.addEventListener('touchmove',e=>{e.preventDefault();if(!drawPainting)return;const p=tpos(c,e);drawCtx.lineTo(p.x,p.y);drawCtx.strokeStyle=drawColor;drawCtx.lineWidth=drawSize;drawCtx.lineCap='round';drawCtx.stroke();},{passive:false});
+  c.addEventListener('touchend',()=>drawPainting=false);
+}
+function clearDraw(){if(drawCtx)drawCtx.clearRect(0,0,800,380);}
+
+// ═══════════════════════════════════
+// MEMORY AIDS
+// ═══════════════════════════════════
+async function renderMemory(){
+  if(!isUnlocked('memory'))return lockedCard();
+  let aids=[];
+  try{const s=await db.collection('memoryAids').where('active','==',true).orderBy('createdAt','desc').get();s.forEach(d=>aids.push({id:d.id,...d.data()}));}catch(e){}
+  if(!aids.length)return`<div class="locked-card"><p class="muted small">No memory aids added yet — your tutor will add rhymes and acronyms here.</p></div>`;
+  let h=`<p class="muted small mb-3">Fill in the blanks from memory, then check your answers.</p>`;
+  aids.forEach((aid,ai)=>{
+    h+=`<div class="card mb-3"><div class="flex-between mb-2"><p style="font-weight:500">${aid.title}</p><span class="tag" style="background:var(--purple-light);color:var(--purple)">${aid.type||'Acronym'}</span></div>`;
+    if(aid.type==='Rhyme'){h+=`<p style="font-size:14px;line-height:2;font-style:italic;color:var(--ink-light)">${aid.content}</p>`;}
+    else{
+      h+=`<div style="line-height:2.6">`;
+      (aid.items||[]).forEach((item,i)=>{
+        h+=`<div class="flex-start" style="gap:8px;margin-bottom:2px;align-items:center">
+          <span style="font-size:18px;font-weight:500;color:var(--teal);min-width:22px">${item.letter}</span>
+          <span contenteditable="true" class="rhyme-blank" id="aid-${ai}-${i}" onblur="checkAid(this,'${item.word.replace(/'/g,'\\\'')}')">&nbsp;</span>
+          <span class="muted" style="font-size:12px">${item.hint||''}</span>
+        </div>`;
+      });
+      h+=`</div><button class="btn btn-outline btn-sm mt-2" onclick="revealAid(${ai})">Reveal answers</button>`;
+      h+=`<script>window._aidItems=window._aidItems||{};window._aidItems[${ai}]=${JSON.stringify(aid.items||[])};<\/script>`;
+    }
+    h+='</div>';
+  });
+  return h;
+}
+function checkAid(el,correct){const v=el.textContent.trim().toLowerCase();if(!v||v==='\u00a0')return;if(v===correct.toLowerCase()){el.classList.add('correct');el.classList.remove('wrong');}else{el.classList.add('wrong');el.classList.remove('correct');}}
+function revealAid(ai){const items=window._aidItems&&window._aidItems[ai]||[];items.forEach((item,i)=>{const el=document.getElementById(`aid-${ai}-${i}`);if(el){el.textContent=item.word;el.classList.add('correct');el.classList.remove('wrong');}});}
+
+// ═══════════════════════════════════
+// RESEARCH
+// ═══════════════════════════════════
+async function renderResearch(){
+  if(!isUnlocked('research'))return lockedCard();
+  let topics=[];
+  try{
+    const s=await db.collection('researchTopics').where('active','==',true).orderBy('createdAt','desc').get();s.forEach(d=>topics.push({id:d.id,...d.data()}));
+    const cd=await db.collection('learners').doc(CL.id).collection('researchAnswers').doc('saved').get();if(cd.exists)researchAnswers=cd.data()||{};
+  }catch(e){}
+  if(!topics.length)return`<div class="locked-card"><p class="muted small">No research topics set yet — your tutor will add these here.</p></div>`;
+  let h='';
+  topics.forEach(t=>{
+    h+=`<div class="card mb-3"><p style="font-weight:500;margin-bottom:4px">${t.title}</p><p class="muted small mb-3">${t.description||''}</p>`;
+    (t.questions||[]).forEach((q,qi)=>{
+      const key=`${t.id}-${qi}`;
+      h+=`<div style="background:var(--cream);border-radius:var(--r);padding:12px 14px;margin-bottom:10px;border-left:3px solid var(--teal)"><p style="font-size:13px;font-weight:500;color:var(--teal);margin-bottom:6px">${q}</p><textarea style="min-height:70px;font-size:13px" placeholder="Write your answer here..." onblur="saveResearchAnswer('${key}',this.value)">${researchAnswers[key]||''}</textarea></div>`;
+    });
+    h+='</div>';
+  });
+  return h;
+}
+async function saveResearchAnswer(key,val){researchAnswers[key]=val;try{await db.collection('learners').doc(CL.id).collection('researchAnswers').doc('saved').set(researchAnswers,{merge:true});}catch(e){}}
+
+// ═══════════════════════════════════
+// ADMIN — access
+// ═══════════════════════════════════
+function adminClick(){
+  adminClickCount++;
+  if(adminTimer)clearTimeout(adminTimer);
+  adminTimer=setTimeout(()=>adminClickCount=0,2000);
+  if(adminClickCount>=5){
+    adminClickCount=0;
+    const modal=document.getElementById('admin-modal');modal.style.display='flex';
+    document.getElementById('admin-pw').value='';document.getElementById('admin-pw-err').style.display='none';
+    setTimeout(()=>document.getElementById('admin-pw').focus(),100);
+  }
+}
+function checkAdminPw(){
+  if(document.getElementById('admin-pw').value===ADMIN_PW){
+    document.getElementById('admin-modal').style.display='none';
+    currentAdminTab='learners';
+    document.querySelectorAll('#admin-tabs .tab-btn').forEach((t,i)=>t.classList.toggle('active',i===0));
+    showPage('page-admin');loadAdminTab();
+  }else{document.getElementById('admin-pw-err').style.display='block';}
+}
+function switchAdminTab(tab,el){currentAdminTab=tab;document.querySelectorAll('#admin-tabs .tab-btn').forEach(t=>t.classList.remove('active'));el.classList.add('active');loadAdminTab();}
+async function loadAdminTab(){
+  const c=document.getElementById('admin-content');c.innerHTML='<div class="text-center mt-3"><div class="spinner"></div></div>';
+  if(currentAdminTab==='learners')c.innerHTML=await renderAdminLearners();
+  else if(currentAdminTab==='worksheets')c.innerHTML=await renderAdminCollection('worksheets','Worksheets','ws',['Title','Description','Image URL','PDF URL']);
+  else if(currentAdminTab==='videos-admin')c.innerHTML=await renderAdminVideosAdmin();
+  else if(currentAdminTab==='questions-admin')c.innerHTML=await renderAdminPQ();
+  else if(currentAdminTab==='memory-admin')c.innerHTML=await renderAdminMemoryAdmin();
+  else if(currentAdminTab==='research-admin')c.innerHTML=await renderAdminResearchAdmin();
+  else if(currentAdminTab==='topics-admin')c.innerHTML=await renderAdminTopicsAdmin();
+}
+
+// ═══════════════════════════════════
+// ADMIN — learners
+// ═══════════════════════════════════
+async function renderAdminLearners(){
+  let snap;try{snap=await db.collection('learners').orderBy('name').get();}catch(e){return'<p class="muted small">Error loading learners.</p>';}
+  let h=`<div class="flex-between mb-3"><h3 style="font-size:15px;font-weight:500">Learners</h3><button class="btn btn-teal btn-sm" onclick="document.getElementById('add-learner-panel').style.display='block'">+ Add learner</button></div>
+  <div id="add-learner-panel" class="card mb-3" style="display:none">
+    <div class="grid-2">
+      <div class="field"><label>First name</label><input type="text" id="nl-name" placeholder="e.g. Sarah"/></div>
+      <div class="field"><label>PIN (4 digits)</label><input type="text" id="nl-pin" maxlength="4" inputmode="numeric" placeholder="e.g. 1234"/></div>
+      <div class="field"><label>Exam</label><select id="nl-exam"><option>NEBDN Diploma</option><option>NEBDN OSCE</option><option>OHE Certificate</option></select></div>
+      <div class="field"><label>Exam date</label><input type="text" id="nl-date" placeholder="e.g. March 2025"/></div>
+    </div>
+    <div id="nl-err" class="form-error" style="display:none"></div>
+    <div class="flex mt-1"><button class="btn btn-primary btn-sm" onclick="addLearner()">Save</button><button class="btn btn-outline btn-sm" onclick="document.getElementById('add-learner-panel').style.display='none'">Cancel</button></div>
+  </div><div class="card">`;
+  if(snap.empty){h+='<p class="muted small text-center" style="padding:1.5rem">No learners yet.</p>';}
+  snap.forEach(doc=>{
+    const d={id:doc.id,...doc.data()};
+    const ini=d.name.split(' ').map(p=>p[0]).join('').toUpperCase().slice(0,2);
+    const sb=d.style?`<span class="tag ${STYLE_INFO[d.style].tagClass}">${STYLE_INFO[d.style].label}</span>`:`<span class="muted" style="font-size:12px">Quiz not done</span>`;
+    const db2=d.diagDone?'<span style="font-size:11px;background:#F0FDF4;color:#166534;padding:2px 7px;border-radius:20px">Diagnostic done</span>':'';
+    const ab=d.accessGranted?'<span style="font-size:11px;background:#D1FAE5;color:#065F46;padding:2px 7px;border-radius:20px;font-weight:500">Access granted</span>':'<span style="font-size:11px;background:#FEF3C7;color:#92400E;padding:2px 7px;border-radius:20px;font-weight:500">Awaiting access</span>';
+    const togs=RES_TYPES.map(rt=>{const on=d.unlocked&&d.unlocked.includes(rt);return`<button class="toggle-btn${on?' on':''}" id="tog-${d.id}-${rt}" onclick="toggleRes('${d.id}','${rt}',this)">${on?'✓ ':''}${rt}</button>`;}).join('');
+    const weak=d.weakTopics&&d.weakTopics.length?`<p class="muted" style="font-size:12px;margin-top:4px">Weak areas: ${d.weakTopics.join(', ')}</p>`:'';
+    h+=`<div style="padding:12px 0;border-bottom:1px solid var(--border)">
+      <div class="flex-between mb-1">
+        <div class="flex"><div class="avatar">${ini}</div>
+          <div><span style="font-weight:500;font-size:14px">${d.name}</span> <span class="muted" style="font-size:12px">PIN: ${d.pin}</span>
+          <div class="flex" style="gap:6px;margin-top:4px;flex-wrap:wrap">${sb}${db2}${ab}</div>${weak}</div>
+        </div>
+        <button class="btn btn-sm ${d.accessGranted?'btn-outline':'btn-teal'}" onclick="grantAccess('${d.id}',${d.accessGranted?'false':'true'},this)">${d.accessGranted?'Revoke':'Grant access'}</button>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">${togs}</div>
+    </div>`;
+  });
+  h+='</div>';return h;
+}
+async function addLearner(){
+  const name=document.getElementById('nl-name').value.trim();
+  const pin=document.getElementById('nl-pin').value.trim();
+  const exam=document.getElementById('nl-exam').value;
+  const examDate=document.getElementById('nl-date').value.trim();
+  const err=document.getElementById('nl-err');err.style.display='none';
+  if(!name||!pin){err.textContent='Name and PIN required.';err.style.display='block';return;}
+  if(!/^\d{4}$/.test(pin)){err.textContent='PIN must be 4 digits.';err.style.display='block';return;}
+  await db.collection('learners').add({name,nameLower:name.toLowerCase(),pin,exam,examDate,unlocked:[],accessGranted:false,varkDone:false,diagDone:false,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+  document.getElementById('add-learner-panel').style.display='none';
+  loadAdminTab();
+}
+async function toggleRes(learnerId,resId,btn){
+  const snap=await db.collection('learners').doc(learnerId).get();
+  let ul=snap.data().unlocked||[];const on=ul.includes(resId);
+  if(on)ul=ul.filter(r=>r!==resId);else ul.push(resId);
+  await db.collection('learners').doc(learnerId).update({unlocked:ul});
+  btn.classList.toggle('on');btn.textContent=(!on?'✓ ':'')+resId;
+  if(CL&&CL.id===learnerId)CL.unlocked=ul;
+}
+async function grantAccess(id,val,btn){
+  const boolVal = val===true||val==='true';
+  await db.collection('learners').doc(id).update({accessGranted:boolVal});
+  btn.textContent=boolVal?'Revoke':'Grant access';btn.className='btn btn-sm '+(boolVal?'btn-outline':'btn-teal');
+  loadAdminTab();
+}
+
+// ═══════════════════════════════════
+// ADMIN — worksheets
+// ═══════════════════════════════════
+async function renderAdminCollection(col,title,prefix){
+  let docs=[];
+  try{const s=await db.collection(col).get();s.forEach(d=>docs.push({id:d.id,...d.data()}));}catch(e){}
+  return`<div class="flex-between mb-3"><h3 style="font-size:15px;font-weight:500">${title}</h3><button class="btn btn-teal btn-sm" onclick="showForm('ws')">+ Add worksheet</button></div>
+  <p class="muted small mb-3">Add a title, optional description, and at least one link. Paste any public URL — GitHub raw links, Google Drive, H5P, Wordwall, etc.</p>
+  <div id="ws-form" class="card mb-3" style="display:none">
+    <div class="field"><label>Title *</label><input type="text" id="ws-title" placeholder="e.g. Tooth anatomy labelling"/></div>
+    <div class="field"><label>Description (optional)</label><input type="text" id="ws-desc" placeholder="e.g. Label the structures of a molar tooth"/></div>
+    <div class="field"><label>Image URL (optional)</label><input type="text" id="ws-img" placeholder="https://raw.githubusercontent.com/..."/></div>
+    <div class="field"><label>PDF link (Google Drive, Dropbox, GitHub etc)</label>
+      <p class="muted small" style="margin-bottom:6px">Upload your PDF to Google Drive, set sharing to "Anyone with the link", then paste the link here.</p>
+      <input type="text" id="ws-pdf" placeholder="https://drive.google.com/..."/>
+    </div>
+    <div class="field"><label>Worksheet / activity link (optional — H5P, Wordwall, GitHub Pages etc)</label><input type="text" id="ws-link" placeholder="https://..."/></div>
+    <div class="flex mt-1"><button class="btn btn-primary btn-sm" onclick="saveWs()">Save worksheet</button><button class="btn btn-outline btn-sm" onclick="hideForm('ws-form')">Cancel</button></div>
+  </div>
+  <div class="card">${docs.length?docs.map(d=>`<div style="padding:10px 0;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px">
+    <div style="flex:1">
+      <p style="font-size:13px;font-weight:500">${d.title}</p>
+      <p class="muted" style="font-size:12px">${d.description||''}</p>
+      <p class="muted" style="font-size:11px">${d.pdfUrl?'PDF link set &nbsp;|&nbsp; ':''}${d.linkUrl?'Worksheet link set &nbsp;|&nbsp; ':''}${d.imageUrl?'Image set':''}</p>
+    </div>
+    <div class="flex">
+      <button class="toggle-btn${d.active!==false?' on':''}" onclick="toggleActive('worksheets','${d.id}',${d.active!==false},this)">${d.active!==false?'Active':'Hidden'}</button>
+      <button class="btn btn-danger btn-xs" onclick="deleteDoc('worksheets','${d.id}')">Delete</button>
+    </div>
+  </div>`).join(''):'<p class="muted small text-center" style="padding:1.5rem">No worksheets yet — add your first one above.</p>'}</div>`;
+}
+async function saveWs(){
+  const t=document.getElementById('ws-title').value.trim();if(!t)return;
+  await db.collection('worksheets').add({
+    title:t,
+    description:document.getElementById('ws-desc').value.trim(),
+    imageUrl:document.getElementById('ws-img').value.trim(),
+    pdfUrl:document.getElementById('ws-pdf').value.trim(),
+    linkUrl:document.getElementById('ws-link').value.trim(),
+    active:true,
+    createdAt:firebase.firestore.FieldValue.serverTimestamp()
+  });
+  hideForm('ws-form');loadAdminTab();
+}
+
+// ═══════════════════════════════════
+// ADMIN — videos
+// ═══════════════════════════════════
+async function renderAdminVideosAdmin(){
+  let docs=[];try{const s=await db.collection('videos').orderBy('createdAt','desc').get();s.forEach(d=>docs.push({id:d.id,...d.data()}));}catch(e){}
+  return`<div class="flex-between mb-3"><h3 style="font-size:15px;font-weight:500">Videos</h3><button class="btn btn-teal btn-sm" onclick="showForm('vid')">+ Add video</button></div>
+  <div id="vid-form" class="card mb-3" style="display:none">
+    <div class="field"><label>Title</label><input type="text" id="vid-title" /></div>
+    <div class="field"><label>Description</label><input type="text" id="vid-desc" /></div>
+    <div class="field"><label>YouTube URL</label><input type="text" id="vid-url" placeholder="https://www.youtube.com/watch?v=..."/></div>
+    <div class="flex mt-1"><button class="btn btn-primary btn-sm" onclick="saveVid()">Save</button><button class="btn btn-outline btn-sm" onclick="hideForm('vid-form')">Cancel</button></div>
+  </div>
+  <div class="card">${docs.map(d=>adminRow(d,'videos',d.title,d.youtubeUrl)).join('')||'<p class="muted small text-center" style="padding:1.5rem">None yet.</p>'}</div>`;
+}
+async function saveVid(){
+  const t=document.getElementById('vid-title').value.trim();if(!t)return;
+  await db.collection('videos').add({title:t,description:document.getElementById('vid-desc').value.trim(),youtubeUrl:document.getElementById('vid-url').value.trim(),active:true,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+  hideForm('vid-form');loadAdminTab();
+}
+
+// ═══════════════════════════════════
+// ADMIN — practice questions
+// ═══════════════════════════════════
+async function renderAdminPQ(){
+  let docs=[];try{const s=await db.collection('diagnosticQuestions').get();s.forEach(d=>docs.push({id:d.id,...d.data()}));}catch(e){}
+  return`<div class="flex-between mb-3"><h3 style="font-size:15px;font-weight:500">Diagnostic questions</h3><button class="btn btn-teal btn-sm" onclick="showForm('pq')">+ Add question</button></div>
+  <p class="muted small mb-3">These are the multiple choice questions learners answer after the VARK quiz. You receive their answers and scores by email when they complete the diagnostic.</p>
+  <div id="pq-form" class="card mb-3" style="display:none">
+    <div class="field"><label>Question</label><input type="text" id="pq-q" placeholder="e.g. What does BPE stand for?"/></div>
+    <div class="grid-2">
+      <div class="field"><label>Option A</label><input type="text" id="pq-a"/></div>
+      <div class="field"><label>Option B</label><input type="text" id="pq-b"/></div>
+      <div class="field"><label>Option C</label><input type="text" id="pq-c"/></div>
+      <div class="field"><label>Option D</label><input type="text" id="pq-d"/></div>
+    </div>
+    <div class="field"><label>Correct answer</label><select id="pq-ans"><option value="0">A</option><option value="1">B</option><option value="2">C</option><option value="3">D</option></select></div>
+    <div class="field"><label>Topic area (used for scoring e.g. Infection control, Periodontics)</label><input type="text" id="pq-topic" placeholder="e.g. Infection control"/></div>
+    <div class="flex mt-1"><button class="btn btn-primary btn-sm" onclick="saveDiagQ()">Save</button><button class="btn btn-outline btn-sm" onclick="hideForm('pq-form')">Cancel</button></div>
+  </div>
+  <div class="card">${docs.length?docs.map((d,i)=>`<div style="padding:10px 0;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px">
+    <div style="flex:1"><p style="font-size:13px;font-weight:500">${i+1}. ${d.q}</p><p class="muted" style="font-size:12px">Topic: ${d.topic||'General'} &nbsp;|&nbsp; Correct: ${['A','B','C','D'][d.ans]} — ${d.opts[d.ans]}</p></div>
+    <div class="flex">
+      <button class="toggle-btn${d.active!==false?' on':''}" onclick="toggleActive('diagnosticQuestions','${d.id}',${d.active!==false},this)">${d.active!==false?'Active':'Hidden'}</button>
+      <button class="btn btn-danger btn-xs" onclick="deleteDoc('diagnosticQuestions','${d.id}')">Delete</button>
+    </div>
+  </div>`).join(''):'<p class="muted small text-center" style="padding:1.5rem">No diagnostic questions yet — add your first one above.</p>'}</div>`;
+}
+async function saveDiagQ(){
+  const q=document.getElementById('pq-q').value.trim();if(!q)return;
+  const opts=[document.getElementById('pq-a').value.trim(),document.getElementById('pq-b').value.trim(),document.getElementById('pq-c').value.trim(),document.getElementById('pq-d').value.trim()];
+  if(opts.some(o=>!o)){alert('Please fill in all four options.');return;}
+  const snap=await db.collection('diagnosticQuestions').get();
+  await db.collection('diagnosticQuestions').add({q,opts,ans:parseInt(document.getElementById('pq-ans').value),topic:document.getElementById('pq-topic').value.trim()||'General',active:true,order:snap.size,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+  hideForm('pq-form');
+  document.getElementById('pq-q').value='';
+  document.getElementById('pq-a').value='';document.getElementById('pq-b').value='';
+  document.getElementById('pq-c').value='';document.getElementById('pq-d').value='';
+  document.getElementById('pq-topic').value='';
+  loadAdminTab();
+}
+
+// ═══════════════════════════════════
+// ADMIN — memory aids
+// ═══════════════════════════════════
+async function renderAdminMemoryAdmin(){
+  let docs=[];try{const s=await db.collection('memoryAids').orderBy('createdAt','desc').get();s.forEach(d=>docs.push({id:d.id,...d.data()}));}catch(e){}
+  return`<div class="flex-between mb-3"><h3 style="font-size:15px;font-weight:500">Memory aids</h3><button class="btn btn-teal btn-sm" onclick="showForm('ma')">+ Add aid</button></div>
+  <div id="ma-form" class="card mb-3" style="display:none">
+    <div class="field"><label>Title</label><input type="text" id="ma-title" placeholder="e.g. SBAR, BPE mnemonic"/></div>
+    <div class="field"><label>Type</label><select id="ma-type" onchange="document.getElementById('ma-acr').style.display=this.value==='Acronym'?'block':'none';document.getElementById('ma-rhy').style.display=this.value==='Rhyme'?'block':'none'">
+      <option value="Acronym">Acronym — fill in the blanks</option><option value="Rhyme">Rhyme or phrase</option>
+    </select></div>
+    <div id="ma-acr">
+      <p class="muted small mb-2">One per line: <code>S = Situation</code> (add a hint after a second = if you like: <code>S = Situation = What is happening now?</code>)</p>
+      <textarea id="ma-items" placeholder="S = Situation&#10;B = Background&#10;A = Assessment&#10;R = Recommendation" style="min-height:100px"></textarea>
+    </div>
+    <div id="ma-rhy" style="display:none"><div class="field"><label>Rhyme or phrase</label><textarea id="ma-content"></textarea></div></div>
+    <div class="flex mt-2"><button class="btn btn-primary btn-sm" onclick="saveMa()">Save</button><button class="btn btn-outline btn-sm" onclick="hideForm('ma-form')">Cancel</button></div>
+  </div>
+  <div class="card">${docs.map(d=>adminRow(d,'memoryAids',d.title,d.type)).join('')||'<p class="muted small text-center" style="padding:1.5rem">None yet.</p>'}</div>`;
+}
+async function saveMa(){
+  const title=document.getElementById('ma-title').value.trim();if(!title)return;
+  const type=document.getElementById('ma-type').value;
+  let data={title,type,active:true,createdAt:firebase.firestore.FieldValue.serverTimestamp()};
+  if(type==='Acronym'){
+    const lines=document.getElementById('ma-items').value.split('\n').filter(l=>l.trim());
+    data.items=lines.map(l=>{const parts=l.split('=');return{letter:(parts[0]||'').trim(),word:(parts[1]||'').trim(),hint:(parts[2]||'').trim()};});
+  }else{data.content=document.getElementById('ma-content').value.trim();}
+  await db.collection('memoryAids').add(data);hideForm('ma-form');loadAdminTab();
+}
+
+// ═══════════════════════════════════
+// ADMIN — research topics
+// ═══════════════════════════════════
+async function renderAdminResearchAdmin(){
+  let docs=[];try{const s=await db.collection('researchTopics').orderBy('createdAt','desc').get();s.forEach(d=>docs.push({id:d.id,...d.data()}));}catch(e){}
+  return`<div class="flex-between mb-3"><h3 style="font-size:15px;font-weight:500">Research topics</h3><button class="btn btn-teal btn-sm" onclick="showForm('rt')">+ Add topic</button></div>
+  <div id="rt-form" class="card mb-3" style="display:none">
+    <div class="field"><label>Topic title</label><input type="text" id="rt-title" placeholder="e.g. Periodontal disease"/></div>
+    <div class="field"><label>Introduction for the learner</label><input type="text" id="rt-desc" placeholder="Brief intro or context"/></div>
+    <p class="muted small mb-2">Questions — one per line:</p>
+    <textarea id="rt-qs" placeholder="What are the signs of gingivitis?&#10;How does plaque cause periodontal disease?&#10;What lifestyle factors increase risk?" style="min-height:100px"></textarea>
+    <div class="flex mt-2"><button class="btn btn-primary btn-sm" onclick="saveRt()">Save</button><button class="btn btn-outline btn-sm" onclick="hideForm('rt-form')">Cancel</button></div>
+  </div>
+  <div class="card">${docs.map(d=>adminRow(d,'researchTopics',d.title,`${(d.questions||[]).length} questions`)).join('')||'<p class="muted small text-center" style="padding:1.5rem">None yet.</p>'}</div>`;
+}
+async function saveRt(){
+  const title=document.getElementById('rt-title').value.trim();if(!title)return;
+  const qs=document.getElementById('rt-qs').value.split('\n').filter(q=>q.trim());
+  await db.collection('researchTopics').add({title,description:document.getElementById('rt-desc').value.trim(),questions:qs,active:true,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+  hideForm('rt-form');loadAdminTab();
+}
+
+// ═══════════════════════════════════
+// ADMIN — topic lists
+// ═══════════════════════════════════
+async function renderAdminTopicsAdmin(){
+  let docs=[];try{const s=await db.collection('topicLists').orderBy('createdAt','desc').get();s.forEach(d=>docs.push({id:d.id,...d.data()}));}catch(e){}
+  return`<div class="flex-between mb-3"><h3 style="font-size:15px;font-weight:500">Topic checklists</h3><button class="btn btn-teal btn-sm" onclick="showForm('tl')">+ Add list</button></div>
+  <div id="tl-form" class="card mb-3" style="display:none">
+    <div class="field"><label>List title</label><input type="text" id="tl-title" placeholder="e.g. Infection control checklist"/></div>
+    <p class="muted small mb-2">Topics — one per line:</p>
+    <textarea id="tl-items" placeholder="Standard precautions&#10;PPE selection&#10;Decontamination sequence&#10;Sharps disposal" style="min-height:100px"></textarea>
+    <div class="flex mt-2"><button class="btn btn-primary btn-sm" onclick="saveTl()">Save</button><button class="btn btn-outline btn-sm" onclick="hideForm('tl-form')">Cancel</button></div>
+  </div>
+  <div class="card">${docs.map(d=>adminRow(d,'topicLists',d.title,`${(d.topics||[]).length} topics`)).join('')||'<p class="muted small text-center" style="padding:1.5rem">None yet.</p>'}</div>`;
+}
+async function saveTl(){
+  const title=document.getElementById('tl-title').value.trim();if(!title)return;
+  const items=document.getElementById('tl-items').value.split('\n').filter(t=>t.trim());
+  await db.collection('topicLists').add({title,topics:items,active:true,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+  hideForm('tl-form');loadAdminTab();
+}
+
+// ═══════════════════════════════════
+// ADMIN — helpers
+// ═══════════════════════════════════
+function adminRow(d,collection,title,subtitle){
+  return`<div style="padding:10px 0;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px">
+    <div><p style="font-size:14px;font-weight:500">${title||''}</p>${subtitle?`<p class="muted small">${subtitle}</p>`:''}</div>
+    <div class="flex">
+      <button class="toggle-btn${d.active!==false?' on':''}" onclick="toggleActive('${collection}','${d.id}',${d.active!==false},this)">${d.active!==false?'Visible':'Hidden'}</button>
+      <button class="btn btn-danger btn-xs" onclick="deleteDoc('${collection}','${d.id}')">Delete</button>
+    </div>
+  </div>`;
+}
+async function toggleActive(col,id,current,btn){await db.collection(col).doc(id).update({active:!current});btn.classList.toggle('on');btn.textContent=!current?'Visible':'Hidden';}
+async function deleteDoc(col,id){if(!confirm('Delete this item?'))return;await db.collection(col).doc(id).delete();loadAdminTab();}
+function showForm(prefix){const el=document.getElementById(prefix+'-form');if(el)el.style.display='block';}
+function hideForm(id){const el=document.getElementById(id);if(el)el.style.display='none';}
